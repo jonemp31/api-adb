@@ -1,7 +1,13 @@
+# =======================================================
+# DOCKER COMPOSE PARA PORTAINER STACK
+# API ADB WhatsApp v3.0 - Produção
+# =======================================================
 version: '3.8'
 
 services:
-  # Redis - Fila FIFO
+  # =======================================================
+  # Redis - Fila FIFO com persistência
+  # =======================================================
   redis:
     image: redis:7-alpine
     container_name: whatsapp-redis
@@ -9,12 +15,27 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
+    command: >
+      redis-server 
+      --appendonly yes 
+      --maxmemory 1gb 
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
     restart: unless-stopped
     networks:
       - whatsapp-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
 
+  # =======================================================
   # Redis Commander - Interface visual (opcional)
+  # Acesso: http://SEU_IP:8081
+  # =======================================================
   redis-commander:
     image: rediscommander/redis-commander:latest
     container_name: whatsapp-redis-commander
@@ -28,46 +49,80 @@ services:
     networks:
       - whatsapp-network
 
-  # Dispatcher - API Principal
+  # =======================================================
+  # Dispatcher - API Principal (IMAGEM DO DOCKER HUB)
+  # =======================================================
   dispatcher:
-    build: .
+    image: jondevsouza31/api-adb:v3.0.0
     container_name: whatsapp-dispatcher
     ports:
       - "8080:8080"
     environment:
+      # Node.js
+      - NODE_ENV=production
       - PORT=8080
+      
+      # Redis
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - NODE_ENV=production
-    env_file:
-      - .env
+      
+      # Supabase (DEFINA NO PORTAINER)
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      
+      # N8N Webhook (DEFINA NO PORTAINER)
+      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL}
+      
+      # Configurações de coordenadas adaptativas
+      - BASE_WIDTH=720
+      - BASE_HEIGHT=1600
+      
+      # Intervalos (em milissegundos)
+      - POLLING_INTERVAL=1500
+      - HEALTH_CHECK_INTERVAL=30000
+      - NOTIFICATION_INTERVAL=3000
+      
     depends_on:
       - redis
     restart: unless-stopped
-    volumes:
-      - ./src:/app/src
-      - /dev/bus/usb:/dev/bus/usb  # Para ADB USB (se precisar)
     privileged: true  # Necessário para ADB
-    network_mode: host  # Necessário para ADB WiFi descobrir devices
-    # Se network_mode: host não funcionar no seu setup, use:
+    network_mode: host  # Necessário para ADB WiFi descobrir devices na rede local
+    
+    # ATENÇÃO: network_mode: host sobrescreve 'ports' e 'networks'
+    # Se seu ambiente não suportar host mode, comente a linha acima e descomente:
     # networks:
     #   - whatsapp-network
 
-  # Dashboard Web - Interface de Gerenciamento
+  # =======================================================
+  # Dashboard Web - Interface de Gerenciamento Vue.js
+  # Acesso: http://SEU_IP:3000
+  # =======================================================
   dashboard:
-    build: ./dashboard
+    image: jondevsouza31/api-adb-dashboard:v3.0.0
     container_name: whatsapp-dashboard
     ports:
       - "3000:80"
+    environment:
+      - VITE_API_URL=http://localhost:8080
     depends_on:
       - dispatcher
     restart: unless-stopped
     networks:
       - whatsapp-network
 
+# =======================================================
+# Networks
+# =======================================================
 networks:
   whatsapp-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
 
+# =======================================================
+# Volumes persistentes
+# =======================================================
 volumes:
   redis_data:
+    driver: local

@@ -1,0 +1,88 @@
+# =======================================================
+# PORTAINER STACK - API ADB WhatsApp v3.0
+# =======================================================
+# Cole este arquivo no Portainer > Stacks > Add Stack
+# Defina as variáveis de ambiente abaixo
+# =======================================================
+
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: whatsapp-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: >
+      redis-server 
+      --appendonly yes 
+      --maxmemory 1gb 
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    restart: unless-stopped
+    networks:
+      - whatsapp-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: whatsapp-redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - whatsapp-network
+
+  dispatcher:
+    image: jondevsouza31/api-adb:v3.0.0
+    container_name: whatsapp-dispatcher
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL}
+      - BASE_WIDTH=720
+      - BASE_HEIGHT=1600
+      - POLLING_INTERVAL=1500
+      - HEALTH_CHECK_INTERVAL=30000
+      - NOTIFICATION_INTERVAL=3000
+    depends_on:
+      - redis
+    restart: unless-stopped
+    privileged: true
+    network_mode: host
+
+networks:
+  whatsapp-network:
+    driver: bridge
+
+volumes:
+  redis_data:
+    driver: local
+
+# =======================================================
+# VARIÁVEIS DE AMBIENTE PARA DEFINIR NO PORTAINER:
+# =======================================================
+# Nome da Variável          | Exemplo de Valor
+# --------------------------|----------------------------------
+# SUPABASE_URL              | https://seu-projeto.supabase.co
+# SUPABASE_KEY              | eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+# N8N_WEBHOOK_URL           | https://seu-n8n.com/webhook/notificacoes
+# =======================================================

@@ -2,7 +2,7 @@
 // ADB SERVICE - Execução de comandos ADB
 // =======================================================
 
-const adb = require('adbkit');
+const adb = require('@devicefarmer/adbkit');
 const client = adb.createClient();
 
 // Cache de resoluções
