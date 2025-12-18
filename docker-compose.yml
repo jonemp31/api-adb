@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # Redis - Fila FIFO
+  redis:
+    image: redis:7-alpine
+    container_name: whatsapp-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    networks:
+      - whatsapp-network
+
+  # Redis Commander - Interface visual (opcional)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: whatsapp-redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - whatsapp-network
+
+  # Dispatcher - API Principal
+  dispatcher:
+    build: .
+    container_name: whatsapp-dispatcher
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - NODE_ENV=production
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    restart: unless-stopped
+    volumes:
+      - ./src:/app/src
+      - /dev/bus/usb:/dev/bus/usb  # Para ADB USB (se precisar)
+    privileged: true  # Necessário para ADB
+    network_mode: host  # Necessário para ADB WiFi descobrir devices
+    # Se network_mode: host não funcionar no seu setup, use:
+    # networks:
+    #   - whatsapp-network
+
+  # Dashboard Web - Interface de Gerenciamento
+  dashboard:
+    build: ./dashboard
+    container_name: whatsapp-dashboard
+    ports:
+      - "3000:80"
+    depends_on:
+      - dispatcher
+    restart: unless-stopped
+    networks:
+      - whatsapp-network
+
+networks:
+  whatsapp-network:
+    driver: bridge
+
+volumes:
+  redis_data:

@@ -1,0 +1,27 @@
+{
+  "name": "whatsapp-adb-v3",
+  "version": "3.0.0",
+  "description": "Sistema ADB WhatsApp - Híbrido com Redis + Supabase",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ioredis": "^5.3.2",
+    "adbkit": "^2.11.3",
+    "@supabase/supabase-js": "^2.38.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "axios": "^1.6.7",
+    "moment": "^2.29.4",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
