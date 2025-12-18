@@ -1,7 +1,7 @@
 # =======================================================
 # STAGE 1: Build dependencies
 # =======================================================
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ RUN npm ci --only=production && \
 # =======================================================
 # STAGE 2: Production image
 # =======================================================
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Labels para metadata
 LABEL maintainer="jondevsouza31"

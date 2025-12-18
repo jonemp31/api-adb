@@ -46,18 +46,18 @@ services:
       - whatsapp-network
 
   dispatcher:
-    image: jondevsouza31/api-adb:v3.0.0
+    image: jondevsouza31/api-adb:v3.0.4
     container_name: whatsapp-dispatcher
     ports:
       - "8080:8080"
     environment:
       - NODE_ENV=production
       - PORT=8080
-      - REDIS_HOST=redis
+      - REDIS_HOST=127.0.0.1
       - REDIS_PORT=6379
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_KEY=${SUPABASE_KEY}
-      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL}
+      - SUPABASE_URL=https://acersupa.painelopen.win/
+      - SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3NTA2NDc2MDAsImV4cCI6MTkwODQxNDAwMH0.XlwdQhDP4o5nAYU7NNyH5XJC44rIyTcG5AoiVLA-ZEA
+      - N8N_WEBHOOK_URL=https://webhook-dev.zapsafe.work/webhook/webhookglobalcels
       - BASE_WIDTH=720
       - BASE_HEIGHT=1600
       - POLLING_INTERVAL=1500
@@ -78,11 +78,11 @@ volumes:
     driver: local
 
 # =======================================================
-# VARIÁVEIS DE AMBIENTE PARA DEFINIR NO PORTAINER:
+# CREDENCIAIS CONFIGURADAS (AMBIENTE DE TESTES)
 # =======================================================
-# Nome da Variável          | Exemplo de Valor
-# --------------------------|----------------------------------
-# SUPABASE_URL              | https://seu-projeto.supabase.co
-# SUPABASE_KEY              | eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-# N8N_WEBHOOK_URL           | https://seu-n8n.com/webhook/notificacoes
+# ✅ SUPABASE_URL: https://acersupa.painelopen.win/
+# ✅ SUPABASE_KEY: eyJhbGci... (SERVICE_ROLE_KEY)
+# ✅ N8N_WEBHOOK_URL: https://webhook-dev.zapsafe.work/webhook/webhookglobalcels
+#
+# PRONTO PARA COPIAR E COLAR NO PORTAINER!
 # =======================================================

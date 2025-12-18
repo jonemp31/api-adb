@@ -320,7 +320,14 @@ app.post('/message/sendMedia/:device', async (req, res) => {
     
     if (!number || !media) {
       return res.status(400).json({ 
-        error: 'Campos obrigatórios: number, media' 
+        error: 'Campos obrigatórios: number, media (formato: "x,y" ex: "112,963")' 
+      });
+    }
+    
+    // Valida formato de coordenadas "x,y"
+    if (!media.includes(',')) {
+      return res.status(400).json({ 
+        error: 'Campo media deve estar no formato "x,y" (ex: "112,963")' 
       });
     }
     
@@ -712,9 +719,9 @@ async function start() {
     }, 60000);
     
     // 7. Inicia API
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log('');
-      console.log(`🚀 API rodando na porta ${PORT}`);
+      console.log(`🚀 API rodando na porta ${PORT} (0.0.0.0 - acessível externamente)`);
       console.log(`📋 Endpoints:`);
       console.log(`   GET  /health`);
       console.log(`   GET  /status`);
