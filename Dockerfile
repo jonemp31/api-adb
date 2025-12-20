@@ -19,8 +19,8 @@ FROM node:20-alpine
 
 # Labels para metadata
 LABEL maintainer="jondevsouza31"
-LABEL version="3.0.0"
-LABEL description="API ADB WhatsApp - Sistema híbrido Redis + Supabase"
+LABEL version="3.0.5"
+LABEL description="API ADB WhatsApp - Sistema híbrido Redis + Supabase + Hot Reload"
 
 # Instala ADB e ferramentas necessárias
 RUN apk add --no-cache \

@@ -162,23 +162,60 @@ async function executeTask(deviceId, task, coords) {
 }
 
 /**
- * Inicia pool de workers (1 por device)
+ * Inicia pool de workers (Hot Reload - idempotente)
+ * @param {Array} devices - Lista de devices online
+ * @param {boolean} isInitialBoot - Se true, mostra mensagem de boot
  */
-async function startWorkerPool(devices) {
-  console.log(`🚀 Iniciando ${devices.length} async workers...`);
-  
-  // Inicia 1 worker por device (NÃO usa await!)
+async function startWorkerPool(devices, isInitialBoot = false) {
+  let novosWorkers = 0;
+  let workersAtivos = [];
+
   devices.forEach(device => {
+    // Verifica se já existe worker para este alias
+    if (workerStatus.has(device.alias)) {
+      workersAtivos.push(device.alias);
+      return; // Pula, worker já existe
+    }
+
+    novosWorkers++;
     const coords = {
       x: device.focus_x || 1345,
       y: device.focus_y || 1006
     };
     
-    // Roda em paralelo!
+    // Inicia novo worker
     deviceWorker(device.alias, device.id, coords);
+    
+    if (!isInitialBoot) {
+      console.log(`🔥 [Hot Reload] Novo worker iniciado: ${device.alias} (${device.id})`);
+    }
+  });
+
+  // Mensagens apropriadas
+  if (isInitialBoot) {
+    console.log(`🚀 ${devices.length} async workers iniciados`);
+  } else if (novosWorkers > 0) {
+    console.log(`✅ Hot Reload: +${novosWorkers} worker(s) | Total: ${workerStatus.size}`);
+  }
+  
+  // Limpar workers órfãos (devices que foram desconectados)
+  const aliasesOnline = devices.map(d => d.alias);
+  const workersOrfaos = [];
+  
+  workerStatus.forEach((status, alias) => {
+    if (!aliasesOnline.includes(alias)) {
+      workersOrfaos.push(alias);
+    }
   });
   
-  console.log(`✅ ${devices.length} workers rodando em paralelo!`);
+  if (workersOrfaos.length > 0) {
+    console.log(`🧹 Limpando ${workersOrfaos.length} worker(s) órfão(s): ${workersOrfaos.join(', ')}`);
+    workersOrfaos.forEach(alias => {
+      workerStatus.delete(alias);
+      // Worker continua no loop infinito mas não processa mais (queue vazia)
+      // TODO: Implementar cancelamento de worker se necessário
+    });
+  }
 }
 
 /**

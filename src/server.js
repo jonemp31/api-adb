@@ -99,6 +99,15 @@ async function syncDevicesMetadata() {
     resolutionCache = tempResCache;
     adbService.resolutionCache = tempResCache;
     
+    // === HOT RELOAD: Inicia workers para novos devices ===
+    // Filtra apenas devices ONLINE do array de updates
+    const onlineDevices = updates.filter(d => d.status === 'ONLINE');
+    
+    if (onlineDevices.length > 0) {
+      await workerPoolService.startWorkerPool(onlineDevices, false);
+    }
+    // =====================================================
+    
   } catch (e) {
     console.error("❌ Erro no sync:", e.message);
   }
@@ -112,7 +121,7 @@ async function syncDevicesMetadata() {
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    version: '3.0.0',
+    version: '3.0.5',
     timestamp: new Date().toISOString()
   });
 });
@@ -698,7 +707,7 @@ async function start() {
     // 3. Inicia workers assíncronos (100 simultâneos!)
     const onlineDevices = await supabaseService.getOnlineDevices();
     if (onlineDevices.length > 0) {
-      await workerPoolService.startWorkerPool(onlineDevices);
+      await workerPoolService.startWorkerPool(onlineDevices, true);
     } else {
       console.log('⚠️ Nenhum device online, workers não iniciados');
     }
