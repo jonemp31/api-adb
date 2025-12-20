@@ -28,6 +28,63 @@ let aliasCache = {};        // { 'cel01': '192.168.1.10:5555' }
 let resolutionCache = {};   // { '192.168.1.10:5555': {w:720, h:1600} }
 
 // =======================================================
+// HELPER: Aguarda execução de task (modo síncrono)
+// =======================================================
+async function waitForTask(taskId, timeoutMs = 90000) {
+  const startTime = Date.now();
+  const pollInterval = 1000; // Verifica a cada 1s
+  
+  while (Date.now() - startTime < timeoutMs) {
+    const task = await queueService.getTask(taskId);
+    
+    if (!task) {
+      return {
+        success: false,
+        error: 'Task não encontrada',
+        taskId
+      };
+    }
+    
+    // Task completa com sucesso
+    if (task.status === 'completed') {
+      return {
+        success: true,
+        task: {
+          id: task.id,
+          status: task.status,
+          result: task.result,
+          executionTime: new Date(task.completedAt) - new Date(task.createdAt)
+        }
+      };
+    }
+    
+    // Task falhou
+    if (task.status === 'failed') {
+      return {
+        success: false,
+        task: {
+          id: task.id,
+          status: task.status,
+          error: task.error,
+          retryCount: task.retryCount
+        }
+      };
+    }
+    
+    // Ainda processando, aguarda 1s
+    await new Promise(resolve => setTimeout(resolve, pollInterval));
+  }
+  
+  // Timeout excedido
+  return {
+    success: false,
+    error: 'Timeout aguardando execução da task',
+    taskId,
+    timeoutMs
+  };
+}
+
+// =======================================================
 // SYNC DE DEVICES (SEU CÓDIGO + SUPABASE)
 // =======================================================
 async function syncDevicesMetadata() {
@@ -121,7 +178,7 @@ async function syncDevicesMetadata() {
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    version: '3.0.6',
+    version: '3.0.7',
     timestamp: new Date().toISOString()
   });
 });
@@ -292,6 +349,7 @@ app.post('/message/sendText/:device', async (req, res) => {
   try {
     const { device } = req.params;
     const { number, text } = req.body;
+    const waitForCompletion = req.query.wait === 'true';
     
     if (!number || !text) {
       return res.status(400).json({ 
@@ -305,6 +363,13 @@ app.post('/message/sendText/:device', async (req, res) => {
       payload: { number, text }
     });
     
+    // Modo síncrono: aguarda execução
+    if (waitForCompletion) {
+      const result = await waitForTask(task.id, 90000);
+      return res.json(result);
+    }
+    
+    // Modo assíncrono (padrão)
     res.status(201).json({
       success: true,
       message: 'Texto adicionado na fila',
@@ -326,6 +391,7 @@ app.post('/message/sendMedia/:device', async (req, res) => {
   try {
     const { device } = req.params;
     const { number, caption, media, viewonce } = req.body;
+    const waitForCompletion = req.query.wait === 'true';
     
     if (!number || !media) {
       return res.status(400).json({ 
@@ -351,6 +417,13 @@ app.post('/message/sendMedia/:device', async (req, res) => {
       }
     });
     
+    // Modo síncrono: aguarda execução
+    if (waitForCompletion) {
+      const result = await waitForTask(task.id, 120000); // 2min para mídia
+      return res.json(result);
+    }
+    
+    // Modo assíncrono (padrão)
     res.status(201).json({
       success: true,
       message: 'Mídia adicionada na fila',
@@ -372,6 +445,7 @@ app.post('/message/sendCall/:device', async (req, res) => {
   try {
     const { device } = req.params;
     const { number, chamada, callDuration } = req.body;
+    const waitForCompletion = req.query.wait === 'true';
     
     if (!number || !chamada) {
       return res.status(400).json({ 
@@ -395,6 +469,15 @@ app.post('/message/sendCall/:device', async (req, res) => {
       }
     });
     
+    // Modo síncrono: aguarda execução
+    if (waitForCompletion) {
+      const duration = parseInt(callDuration) || 5;
+      const timeout = 90000 + (duration * 1000); // Base + duração da chamada
+      const result = await waitForTask(task.id, timeout);
+      return res.json(result);
+    }
+    
+    // Modo assíncrono (padrão)
     res.status(201).json({
       success: true,
       message: 'Ligação adicionada na fila',
@@ -416,6 +499,7 @@ app.post('/message/sendPix/:device', async (req, res) => {
   try {
     const { device } = req.params;
     const { number } = req.body;
+    const waitForCompletion = req.query.wait === 'true';
     
     if (!number) {
       return res.status(400).json({ 
@@ -429,6 +513,13 @@ app.post('/message/sendPix/:device', async (req, res) => {
       payload: { number }
     });
     
+    // Modo síncrono: aguarda execução
+    if (waitForCompletion) {
+      const result = await waitForTask(task.id, 90000);
+      return res.json(result);
+    }
+    
+    // Modo assíncrono (padrão)
     res.status(201).json({
       success: true,
       message: 'PIX adicionado na fila',
@@ -450,6 +541,7 @@ app.post('/message/saveContact/:device', async (req, res) => {
   try {
     const { device } = req.params;
     const { namelead, tag, numberlead } = req.body;
+    const waitForCompletion = req.query.wait === 'true';
     
     if (!namelead || !numberlead) {
       return res.status(400).json({ 
@@ -467,6 +559,13 @@ app.post('/message/saveContact/:device', async (req, res) => {
       }
     });
     
+    // Modo síncrono: aguarda execução
+    if (waitForCompletion) {
+      const result = await waitForTask(task.id, 120000); // 2min para salvar contato
+      return res.json(result);
+    }
+    
+    // Modo assíncrono (padrão)
     res.status(201).json({
       success: true,
       message: 'Salvamento de contato adicionado na fila',

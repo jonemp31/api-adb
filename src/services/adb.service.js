@@ -17,7 +17,7 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 /**
  * Executa comando shell com timeout
  */
-async function execShell(deviceId, cmd, timeout = 10000) {
+async function execShell(deviceId, cmd, timeout = 60000) {
   return new Promise(async (resolve, reject) => {
     let done = false;
     const timer = setTimeout(() => {
