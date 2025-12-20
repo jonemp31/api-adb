@@ -46,7 +46,7 @@ services:
       - whatsapp-network
 
   dispatcher:
-    image: jondevsouza31/api-adb:v3.0.8
+    image: jondevsouza31/api-adb:v3.1.0
     container_name: whatsapp-dispatcher
     ports:
       - "8080:8080"
