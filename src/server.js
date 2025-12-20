@@ -121,7 +121,7 @@ async function syncDevicesMetadata() {
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    version: '3.0.5',
+    version: '3.0.6',
     timestamp: new Date().toISOString()
   });
 });

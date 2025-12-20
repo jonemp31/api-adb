@@ -27,35 +27,60 @@ function extractPhoneNumber(str) {
 }
 
 /**
- * Parse direto e eficiente (método arquivo 2)
+ * Parse direto e eficiente (Versão Corrigida para NotificationRecord com parênteses)
  */
 async function parseNotifications(alias, realId, output) {
+  // Verificação básica se tem whatsapp no texto
   if (!output.toLowerCase().includes('whatsapp')) return;
   
   const notifs = [];
-  const blocks = output.split(/NotificationRecord\{/);
   
+  // CORREÇÃO 1: Split flexível (aceita '(' ou '{' logo após NotificationRecord)
+  // Alguns Androids usam "NotificationRecord{" e outros "NotificationRecord("
+  const blocks = output.split(/NotificationRecord[\(\{]/);
+  
+  console.log(`🔎 [${alias}] Blocos encontrados: ${blocks.length - 1}`);
+
   for (const block of blocks) {
     if (!block.includes('whatsapp')) continue;
     
     // Extrai pacote
-    const pkg = block.match(/pkg=([^\s]+)/)?.[1] || "";
+    const pkgMatch = block.match(/pkg=([^\s]+)/);
+    const pkg = pkgMatch ? pkgMatch[1] : "";
+    
+    // Garante que é do WhatsApp (Business ou Normal)
     if (!pkg.includes('whatsapp')) continue;
     
-    // Extrai título (quem enviou)
-    const title = block.match(/android\.title=String \(([^)]+)\)/)?.[1]?.replace(/"/g, '') || "";
-    
-    // Extrai texto (mensagem)
-    const text = block.match(/android\.text=String \(([^)]+)\)/)?.[1]?.replace(/"/g, '') || "";
-    const bigText = block.match(/android\.bigText=String \(([^)]+)\)/)?.[1]?.replace(/"/g, '') || "";
-    
+    // CORREÇÃO 2: Regex Universal para Title e Text
+    // Captura: android.title=String (Valor)  OU  android.title=Valor
+    const extractValue = (str, field) => {
+      const regexComplex = new RegExp(`${field}=String \\(([^)]+)\\)`);
+      const regexSimple = new RegExp(`${field}=([^,\\n]+)`);
+      
+      let match = str.match(regexComplex);
+      if (match) return match[1].replace(/"/g, ''); // Remove aspas extras se tiver
+      
+      match = str.match(regexSimple);
+      return match ? match[1].trim().replace(/"/g, '') : "";
+    };
+
+    const title = extractValue(block, 'android.title');
+    const text = extractValue(block, 'android.text');
+    const bigText = extractValue(block, 'android.bigText');
     const message = bigText || text;
     
-    // Ignora sistema e grupos
+    // Debug para ver o que ele está lendo (Pode remover depois)
+    // console.log(`   📝 Lendo: ${title} -> ${message.substring(0, 20)}...`);
+
+    // Ignora notificações de sistema/indesejadas
     if (!message || 
         message.includes('mensagens de') || 
         message.includes('WhatsApp Web') ||
-        title === 'WhatsApp') continue;
+        message.includes('A procurar novas mensagens') ||
+        message.includes('Verificar downloads') ||
+        title === 'WhatsApp' || 
+        title === 'WhatsApp Business' ||
+        title === 'WA Business') continue;
     
     // Timestamp
     const timeMatch = block.match(/when=([0-9]+)/);
@@ -69,38 +94,38 @@ async function parseNotifications(alias, realId, output) {
     });
   }
   
-  // Filtra duplicatas (última 50 chars como hash)
+  // Filtra duplicatas (Cache)
   const fresh = notifs.filter(n => {
-    const key = `${alias}-${n.title}-${n.message}`.substring(0, 50);
-    const now = Date.now();
+    // Cria uma assinatura única da mensagem
+    const key = `${alias}-${n.title}-${n.message}-${n.timestampRaw}`;
     
-    // Remove entradas antigas (>1 hora)
-    if (seen.size > 500) {
+    // Limpeza automática do cache (se ficar muito grande)
+    if (seen.size > 1000) {
+      const keysToDelete = [];
+      const now = Date.now();
       for (const [k, ts] of seen.entries()) {
-        if (now - ts > 3600000) seen.delete(k);
+        if (now - ts > 3600000) keysToDelete.push(k); // Remove mais velhas que 1h
       }
+      keysToDelete.forEach(k => seen.delete(k));
     }
     
     if (seen.has(key)) return false;
     
-    seen.set(key, now);
+    seen.set(key, Date.now());
     return true;
   });
   
   if (fresh.length > 0) {
-    console.log(`🔔 [${alias}] ${fresh.length} nova(s) notificação(ões)`);
+    console.log(`🔔 [${alias}] ${fresh.length} nova(s) mensagem(ns) real(is)!`);
     
-    // Para cada notificação, envia com seu payload rico
     fresh.forEach(n => {
-      // Extrai telefone
+      // Extrai telefone do título ou do texto
       let phone = extractPhoneNumber(n.title);
       if (!phone) phone = extractPhoneNumber(n.message);
       
-      // Formata data (seu formato)
       const horario = moment(n.timestampRaw).format('DD/MM/YYYY HH:mm');
       const timestamp = new Date(n.timestampRaw).toISOString();
       
-      // Payload híbrido (método arquivo 2 + seus dados)
       const payload = {
         timestamp: timestamp,
         horario: horario,
@@ -111,10 +136,9 @@ async function parseNotifications(alias, realId, output) {
         phone: phone
       };
       
-      // Envia (não bloqueia)
       axios.post(N8N_WEBHOOK_URL, payload)
-        .then(() => console.log(`   ✅ [${alias}] Webhook enviado: ${n.title}`))
-        .catch(e => console.error(`   ⚠️ [${alias}] Erro webhook: ${e.message}`));
+        .then(() => console.log(`   ✅ [${alias}] Enviado para N8N: ${n.title}`))
+        .catch(e => console.error(`   ⚠️ [${alias}] Falha N8N: ${e.message}`));
     });
   }
 }
