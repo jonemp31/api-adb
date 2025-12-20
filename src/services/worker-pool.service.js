@@ -29,6 +29,14 @@ async function deviceWorker(alias, deviceId, coords = {}) {
   
   while (true) {
     try {
+      // === KILL SWITCH: Verifica se recebeu ordem de parada ===
+      if (workerStatus.get(alias) === 'STOP') {
+        console.log(`🛑 Worker ${alias} encerrado por orfandade`);
+        workerStatus.delete(alias); // Remove definitivamente
+        break; // Encerra o loop infinito
+      }
+      // =========================================================
+      
       // 1. Marca como idle
       workerStatus.set(alias, 'idle');
       
@@ -211,9 +219,8 @@ async function startWorkerPool(devices, isInitialBoot = false) {
   if (workersOrfaos.length > 0) {
     console.log(`🧹 Limpando ${workersOrfaos.length} worker(s) órfão(s): ${workersOrfaos.join(', ')}`);
     workersOrfaos.forEach(alias => {
-      workerStatus.delete(alias);
-      // Worker continua no loop infinito mas não processa mais (queue vazia)
-      // TODO: Implementar cancelamento de worker se necessário
+      // Sinaliza para o worker parar (Kill Switch)
+      workerStatus.set(alias, 'STOP');
     });
   }
 }
