@@ -411,7 +411,6 @@ app.post('/message/sendText/:device', (req, res) => {
 app.post('/message/sendMedia/:device', (req, res) => {
   const { number, media, caption, viewonce } = req.body;
   if (!number || !media) return res.status(400).json({ error: 'number e media obrigatórios' });
-  if (!media.includes(',')) return res.status(400).json({ error: 'media deve estar no formato "x,y"' });
   
   handleTaskRequest(req, res, 'send_media', { 
     number, 
