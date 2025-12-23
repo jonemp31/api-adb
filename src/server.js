@@ -32,9 +32,7 @@ let resolutionCache = {};   // { '192.168.1.10:5555': {w:720, h:1600} }
 // =======================================================
 const DEFAULT_CUSTOM_COORDS = {
   sendText: {
-    tap: { x: 1345, y: 1006 },
-    reset1: { x: 655, y: 1299 },
-    reset2: { x: 332, y: 730 }
+    tap: { x: 1345, y: 1006 }
   },
   sendMedia: {
     clipe: { x: 492, y: 1461 },

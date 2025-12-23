@@ -222,22 +222,11 @@ async function sendMessage(deviceId, phone, message, coords = {}) {
   await execShell(deviceId, 'input keyevent 66');
   await sleep(1000);
   
-  // 5. Volta e reset completo (4 comandos como no script bash)
+  // 5. Volta (2 backs)
   await execShell(deviceId, 'input keyevent 4');
   await sleep(500);
   await execShell(deviceId, 'input keyevent 4');
-  await sleep(1000);
-  
-  // Taps de reset (garantem volta total ao estado inicial)
-  const coordReset1 = coords.custom?.sendText?.reset1 
-    ? coords.custom.sendText.reset1 
-    : calcCoords(deviceId, 655, 1299);
-  const coordReset2 = coords.custom?.sendText?.reset2 
-    ? coords.custom.sendText.reset2 
-    : calcCoords(deviceId, 332, 730);
-  await execShell(deviceId, `input tap ${coordReset1.x} ${coordReset1.y}`);
-  await sleep(1000);
-  await execShell(deviceId, `input tap ${coordReset2.x} ${coordReset2.y}`);
+  await sleep(1500);
   
   return {
     sent: true,
