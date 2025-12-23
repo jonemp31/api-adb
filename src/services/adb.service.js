@@ -248,130 +248,76 @@ async function connect(ip, port = '5555') {
 }
 
 /**
- * Envia mídia (imagem/vídeo/áudio/documento) via WhatsApp
+ * Envia mídia (imagem/vídeo) via WhatsApp usando Intent
  * @param {string} deviceId - ID do device
  * @param {string} number - Número do destinatário
- * @param {string} media - Coordenadas x,y ou caminho/arquivo
+ * @param {string} media - Nome do arquivo (foto.jpg, video.mp4)
  * @param {string} caption - Legenda da mídia
  * @param {boolean} viewonce - Visualização única
  * @param {object} coords - Coordenadas customizadas
  */
 async function sendMedia(deviceId, number, media, caption = '', viewonce = false, coords = {}) {
-  console.log(`📷 [${deviceId}] Enviando mídia para ${number} (viewonce: ${viewonce})`);
+  console.log(`📷 [${deviceId}] Enviando mídia ${media} para ${number} (viewonce: ${viewonce})`);
   
   // Busca resolução se não tem
   if (!resolutionCache[deviceId]) {
     await getResolution(deviceId);
   }
   
-  // Coordenadas base (custom_coords tem prioridade, senão calcCoords)
-  const coordClipe = coords.custom?.sendMedia?.clipe 
-    ? coords.custom.sendMedia.clipe 
-    : calcCoords(deviceId, coords.clipe_x || 492, coords.clipe_y || 1461);
-  const coordGaleria = coords.custom?.sendMedia?.galeria 
-    ? coords.custom.sendMedia.galeria 
-    : calcCoords(deviceId, coords.galeria_x || 434, coords.galeria_y || 957);
-  const coordAbaPastas = coords.custom?.sendMedia?.aba_pastas 
-    ? coords.custom.sendMedia.aba_pastas 
-    : calcCoords(deviceId, coords.aba_pastas_x || 441, coords.aba_pastas_y || 796);
-  const coordPasta = coords.custom?.sendMedia?.pasta 
-    ? coords.custom.sendMedia.pasta 
-    : calcCoords(deviceId, coords.pasta_x || 335, coords.pasta_y || 1209);
-  const coordBtnOnce = coords.custom?.sendMedia?.btn_once 
-    ? coords.custom.sendMedia.btn_once 
-    : calcCoords(deviceId, coords.btn_once_x || 563, coords.btn_once_y || 1463);
-  const coordEnviar = coords.custom?.sendMedia?.enviar 
-    ? coords.custom.sendMedia.enviar 
-    : calcCoords(deviceId, coords.enviar_x || 670, coords.enviar_y || 1459);
+  // Determina tipo de mídia baseado na extensão
+  const ext = media.split('.').pop().toLowerCase();
+  const mediaType = ['mp4', 'avi', 'mov', 'mkv'].includes(ext) ? 'video/*' : 'image/*';
   
-  // 1. Abre WhatsApp na conversa
-  console.log(`📱 [${deviceId}] Abrindo conversa...`);
-  await execShell(
-    deviceId,
-    `am start -a android.intent.action.VIEW -d "https://api.whatsapp.com/send?phone=${number}" com.whatsapp.w4b`
-  );
-  await sleep(5000); // Delay maior para carregar conversa + histórico
+  // Monta o path completo do arquivo
+  const filePath = `file:///storage/emulated/0/Download/${media}`;
   
-  // 2. Clicar no Clipe (Anexo)
-  console.log(`📎 [${deviceId}] Abrindo menu de anexos...`);
-  await execShell(deviceId, `input tap ${coordClipe.x} ${coordClipe.y}`);
-  await sleep(2500);
+  // JID do WhatsApp (formato: numero@s.whatsapp.net)
+  const jid = `${number}@s.whatsapp.net`;
   
-  // 3. Clicar na Galeria
-  console.log(`🖼️ [${deviceId}] Abrindo Galeria...`);
-  await execShell(deviceId, `input tap ${coordGaleria.x} ${coordGaleria.y}`);
-  await sleep(3000);
+  // 1. Abre WhatsApp com intent SEND passando o arquivo
+  console.log(`📱 [${deviceId}] Abrindo WhatsApp com intent...`);
   
-  // 4. Navegar até a pasta (2 cliques)
-  console.log(`📂 [${deviceId}] Selecionando aba de pastas...`);
-  await execShell(deviceId, `input tap ${coordAbaPastas.x} ${coordAbaPastas.y}`);
-  await sleep(2200);
+  // Monta comando base
+  let intentCmd = `am start -a android.intent.action.SEND -t ${mediaType} --eu android.intent.extra.STREAM "${filePath}" --es jid "${jid}"`;
   
-  console.log(`📂 [${deviceId}] Entrando na pasta Downloads...`);
-  await execShell(deviceId, `input tap ${coordPasta.x} ${coordPasta.y}`);
-  await sleep(2500);
-  
-  // 5. Selecionar a Mídia
-  // Se media for coordenadas (formato: "112,963")
-  let coordMidia;
-  if (media.includes(',')) {
-    const [x, y] = media.split(',').map(n => parseInt(n.trim()));
-    coordMidia = calcCoords(deviceId, x, y);
-    console.log(`📸 [${deviceId}] Selecionando mídia nas coordenadas ${x},${y}...`);
-  } else {
-    // Se for caminho de arquivo, usar coordenadas padrão (primeira mídia)
-    coordMidia = calcCoords(deviceId, 112, 963);
-    console.log(`📸 [${deviceId}] Selecionando primeira mídia (padrão)...`);
-    // TODO: Implementar push de arquivo se necessário
-    // await execShell(deviceId, `push ${media} /sdcard/Download/`);
-  }
-  
-  await execShell(deviceId, `input tap ${coordMidia.x} ${coordMidia.y}`);
-  await sleep(2500);
-  
-  // 6. Adicionar Caption se houver
+  // Adiciona caption se houver
   if (caption && caption.trim() !== '') {
-    console.log(`📝 [${deviceId}] Adicionando caption...`);
-    const coordCaptionField = calcCoords(deviceId, coords.caption_x || 360, coords.caption_y || 1380);
-    
-    // Clicar no campo de caption
-    await execShell(deviceId, `input tap ${coordCaptionField.x} ${coordCaptionField.y}`);
-    await sleep(800);
-    
-    // Digitar caption humanizado
-    await typeHumanAdvanced(deviceId, caption);
-    await sleep(600);
+    // Remove acentos e escapa caracteres especiais
+    const captionSafe = caption.replace(/[\\`"$]/g, '\\$&');
+    intentCmd += ` --es android.intent.extra.TEXT "${captionSafe}"`;
   }
   
-  // 7. Ativar Visualização Única (View Once)
+  intentCmd += ' com.whatsapp.w4b';
+  
+  await execShell(deviceId, intentCmd);
+  await sleep(4000); // Aguarda carregar preview da mídia
+  
+  // 2. Ativar Visualização Única se necessário
   if (viewonce) {
     console.log(`👁️ [${deviceId}] Ativando Visualização Única...`);
+    const coordBtnOnce = coords.custom?.sendMedia?.btn_once 
+      ? coords.custom.sendMedia.btn_once 
+      : calcCoords(deviceId, 563, 1463);
+    
     await execShell(deviceId, `input tap ${coordBtnOnce.x} ${coordBtnOnce.y}`);
-    await sleep(2000);
+    await sleep(1500);
   }
   
-  // 8. Enviar
+  // 3. Enviar
   console.log(`📤 [${deviceId}] Enviando mídia...`);
+  const coordEnviar = coords.custom?.sendMedia?.enviar 
+    ? coords.custom.sendMedia.enviar 
+    : calcCoords(deviceId, 670, 1459);
+  
   await execShell(deviceId, `input tap ${coordEnviar.x} ${coordEnviar.y}`);
   await sleep(3000);
   
-  // 9. Voltar para tela inicial (4 backs como no script)
-  console.log(`🔙 [${deviceId}] Voltando para tela inicial...`);
+  // 4. Voltar (2 backs)
+  console.log(`🔙 [${deviceId}] Voltando...`);
   await execShell(deviceId, 'input keyevent 4');
   await sleep(500);
   await execShell(deviceId, 'input keyevent 4');
-  await sleep(1000);
-  
-  // Taps adicionais de reset (do script original)
-  const coordReset1 = coords.custom?.sendMedia?.reset1 
-    ? coords.custom.sendMedia.reset1 
-    : calcCoords(deviceId, 655, 1299);
-  const coordReset2 = coords.custom?.sendMedia?.reset2 
-    ? coords.custom.sendMedia.reset2 
-    : calcCoords(deviceId, 332, 730);
-  await execShell(deviceId, `input tap ${coordReset1.x} ${coordReset1.y}`);
-  await sleep(1000);
-  await execShell(deviceId, `input tap ${coordReset2.x} ${coordReset2.y}`);
+  await sleep(1500);
   
   return {
     sent: true,

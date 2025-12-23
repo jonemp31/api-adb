@@ -35,14 +35,8 @@ const DEFAULT_CUSTOM_COORDS = {
     tap: { x: 1345, y: 1006 }
   },
   sendMedia: {
-    clipe: { x: 492, y: 1461 },
-    galeria: { x: 434, y: 957 },
-    aba_pastas: { x: 441, y: 796 },
-    pasta: { x: 335, y: 1209 },
     btn_once: { x: 563, y: 1463 },
-    enviar: { x: 670, y: 1459 },
-    reset1: { x: 655, y: 1299 },
-    reset2: { x: 332, y: 730 }
+    enviar: { x: 670, y: 1459 }
   },
   sendCall: {
     btn_audio: { x: 601, y: 126 },
