@@ -294,7 +294,7 @@ async function sendMedia(deviceId, number, media, caption = '', viewonce = false
   intentCmd += ' com.whatsapp.w4b';
   
   await execShell(deviceId, intentCmd);
-  await sleep(5000); // Aguarda carregar preview da mídia (aumentado para garantir)
+  await sleep(5000); // Aguarda carregar preview da mídia
   
   // 2. Se for vídeo, clicar em "Deseja compartilhar? Sim"
   if (mediaType === 'video/*') {
@@ -307,17 +307,15 @@ async function sendMedia(deviceId, number, media, caption = '', viewonce = false
     await sleep(2000);
   }
   
-  // 3. Ativar Visualização Única se necessário
+  // 3. Ativar Visualização Única se necessário (método da galeria)
   if (isViewOnce) {
     console.log(`👁️ [${deviceId}] Ativando Visualização Única...`);
     const coordBtnOnce = coords.custom?.sendMedia?.btn_once 
       ? coords.custom.sendMedia.btn_once 
-      : calcCoords(deviceId, 649, 1345);
+      : calcCoords(deviceId, 563, 1463);
     
-    await sleep(1000); // Delay antes do clique
-    console.log(`👁️ [${deviceId}] Clicando em ViewOnce: X=${coordBtnOnce.x}, Y=${coordBtnOnce.y}`);
     await execShell(deviceId, `input tap ${coordBtnOnce.x} ${coordBtnOnce.y}`);
-    await sleep(1000); // Delay depois do clique
+    await sleep(2000);
   }
   
   // 4. Enviar
@@ -329,10 +327,8 @@ async function sendMedia(deviceId, number, media, caption = '', viewonce = false
   await execShell(deviceId, `input tap ${coordEnviar.x} ${coordEnviar.y}`);
   await sleep(3000);
   
-  // 5. Voltar (2 backs)
+  // 5. Voltar (1 back)
   console.log(`🔙 [${deviceId}] Voltando...`);
-  await execShell(deviceId, 'input keyevent 4');
-  await sleep(500);
   await execShell(deviceId, 'input keyevent 4');
   await sleep(1500);
   
