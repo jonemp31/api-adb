@@ -36,7 +36,7 @@ const DEFAULT_CUSTOM_COORDS = {
   },
   sendMedia: {
     confirm_video: { x: 549, y: 866 },
-    btn_once: { x: 652, y: 1347 },
+    btn_once: { x: 649, y: 1345 },
     enviar: { x: 670, y: 1459 }
   },
   sendCall: {
