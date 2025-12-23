@@ -28,6 +28,49 @@ let aliasCache = {};        // { 'cel01': '192.168.1.10:5555' }
 let resolutionCache = {};   // { '192.168.1.10:5555': {w:720, h:1600} }
 
 // =======================================================
+// COORDENADAS PADRÃO (BASE 720x1600)
+// =======================================================
+const DEFAULT_CUSTOM_COORDS = {
+  sendText: {
+    tap: { x: 1345, y: 1006 },
+    reset1: { x: 655, y: 1299 },
+    reset2: { x: 332, y: 730 }
+  },
+  sendMedia: {
+    clipe: { x: 492, y: 1461 },
+    galeria: { x: 434, y: 957 },
+    aba_pastas: { x: 441, y: 796 },
+    pasta: { x: 335, y: 1209 },
+    btn_once: { x: 563, y: 1463 },
+    enviar: { x: 670, y: 1459 },
+    reset1: { x: 655, y: 1299 },
+    reset2: { x: 332, y: 730 }
+  },
+  sendCall: {
+    btn_audio: { x: 601, y: 126 },
+    btn_video: { x: 517, y: 123 },
+    btn_desligar: { x: 586, y: 1416 },
+    reset_menu: { x: 655, y: 1299 },
+    reset_x: { x: 332, y: 730 }
+  },
+  sendPix: {
+    clipe: { x: 492, y: 1461 },
+    icon_pix: { x: 282, y: 1115 },
+    btn_enviar: { x: 364, y: 1452 },
+    reset_menu: { x: 655, y: 1299 },
+    reset_x: { x: 332, y: 730 }
+  },
+  saveContact: {
+    passo1: { x: 644, y: 1325 },
+    passo2: { x: 346, y: 360 },
+    passo3: { x: 218, y: 257 },
+    passo5: { x: 205, y: 389 },
+    passo7: { x: 368, y: 526 },
+    passo9: { x: 340, y: 954 }
+  }
+};
+
+// =======================================================
 // FORMATADOR INTELIGENTE (Padrão REST Moderno)
 // =======================================================
 const formatTaskResponse = (task) => {
@@ -162,7 +205,8 @@ async function syncDevicesMetadata() {
         height: h,
         status: 'ONLINE',
         last_seen: new Date().toISOString(),
-        model: device.type || 'Unknown'
+        model: device.type || 'Unknown',
+        custom_coords: existing?.custom_coords || DEFAULT_CUSTOM_COORDS
       });
     }
     
@@ -197,7 +241,7 @@ async function syncDevicesMetadata() {
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    version: '3.1.0',
+    version: '3.1.1',
     timestamp: new Date().toISOString()
   });
 });

@@ -196,8 +196,10 @@ async function sendMessage(deviceId, phone, message, coords = {}) {
     await getResolution(deviceId);
   }
   
-  // Coordenadas adaptativas
-  const tapCoords = calcCoords(deviceId, coords.x || 1345, coords.y || 1006);
+  // Coordenadas adaptativas (custom_coords tem prioridade)
+  const tapCoords = coords.custom?.sendText?.tap 
+    ? coords.custom.sendText.tap 
+    : calcCoords(deviceId, coords.x || 1345, coords.y || 1006);
   
   // 1. Abre WhatsApp
   await execShell(
@@ -227,8 +229,12 @@ async function sendMessage(deviceId, phone, message, coords = {}) {
   await sleep(1000);
   
   // Taps de reset (garantem volta total ao estado inicial)
-  const coordReset1 = calcCoords(deviceId, 655, 1299);
-  const coordReset2 = calcCoords(deviceId, 332, 730);
+  const coordReset1 = coords.custom?.sendText?.reset1 
+    ? coords.custom.sendText.reset1 
+    : calcCoords(deviceId, 655, 1299);
+  const coordReset2 = coords.custom?.sendText?.reset2 
+    ? coords.custom.sendText.reset2 
+    : calcCoords(deviceId, 332, 730);
   await execShell(deviceId, `input tap ${coordReset1.x} ${coordReset1.y}`);
   await sleep(1000);
   await execShell(deviceId, `input tap ${coordReset2.x} ${coordReset2.y}`);
@@ -269,13 +275,25 @@ async function sendMedia(deviceId, number, media, caption = '', viewonce = false
     await getResolution(deviceId);
   }
   
-  // Coordenadas base (referência 720x1600)
-  const coordClipe = calcCoords(deviceId, coords.clipe_x || 492, coords.clipe_y || 1461);
-  const coordGaleria = calcCoords(deviceId, coords.galeria_x || 434, coords.galeria_y || 957);
-  const coordAbaPastas = calcCoords(deviceId, coords.aba_pastas_x || 441, coords.aba_pastas_y || 796);
-  const coordPasta = calcCoords(deviceId, coords.pasta_x || 335, coords.pasta_y || 1209);
-  const coordBtnOnce = calcCoords(deviceId, coords.btn_once_x || 563, coords.btn_once_y || 1463);
-  const coordEnviar = calcCoords(deviceId, coords.enviar_x || 670, coords.enviar_y || 1459);
+  // Coordenadas base (custom_coords tem prioridade, senão calcCoords)
+  const coordClipe = coords.custom?.sendMedia?.clipe 
+    ? coords.custom.sendMedia.clipe 
+    : calcCoords(deviceId, coords.clipe_x || 492, coords.clipe_y || 1461);
+  const coordGaleria = coords.custom?.sendMedia?.galeria 
+    ? coords.custom.sendMedia.galeria 
+    : calcCoords(deviceId, coords.galeria_x || 434, coords.galeria_y || 957);
+  const coordAbaPastas = coords.custom?.sendMedia?.aba_pastas 
+    ? coords.custom.sendMedia.aba_pastas 
+    : calcCoords(deviceId, coords.aba_pastas_x || 441, coords.aba_pastas_y || 796);
+  const coordPasta = coords.custom?.sendMedia?.pasta 
+    ? coords.custom.sendMedia.pasta 
+    : calcCoords(deviceId, coords.pasta_x || 335, coords.pasta_y || 1209);
+  const coordBtnOnce = coords.custom?.sendMedia?.btn_once 
+    ? coords.custom.sendMedia.btn_once 
+    : calcCoords(deviceId, coords.btn_once_x || 563, coords.btn_once_y || 1463);
+  const coordEnviar = coords.custom?.sendMedia?.enviar 
+    ? coords.custom.sendMedia.enviar 
+    : calcCoords(deviceId, coords.enviar_x || 670, coords.enviar_y || 1459);
   
   // 1. Abre WhatsApp na conversa
   console.log(`📱 [${deviceId}] Abrindo conversa...`);
@@ -356,8 +374,12 @@ async function sendMedia(deviceId, number, media, caption = '', viewonce = false
   await sleep(1000);
   
   // Taps adicionais de reset (do script original)
-  const coordReset1 = calcCoords(deviceId, 655, 1299);
-  const coordReset2 = calcCoords(deviceId, 332, 730);
+  const coordReset1 = coords.custom?.sendMedia?.reset1 
+    ? coords.custom.sendMedia.reset1 
+    : calcCoords(deviceId, 655, 1299);
+  const coordReset2 = coords.custom?.sendMedia?.reset2 
+    ? coords.custom.sendMedia.reset2 
+    : calcCoords(deviceId, 332, 730);
   await execShell(deviceId, `input tap ${coordReset1.x} ${coordReset1.y}`);
   await sleep(1000);
   await execShell(deviceId, `input tap ${coordReset2.x} ${coordReset2.y}`);
@@ -388,12 +410,22 @@ async function sendCall(deviceId, number, chamada, callDuration = 5, coords = {}
     await getResolution(deviceId);
   }
   
-  // Coordenadas base (referência 720x1600)
-  const coordBtnAudio = calcCoords(deviceId, coords.btn_audio_x || 601, coords.btn_audio_y || 126);
-  const coordBtnVideo = calcCoords(deviceId, coords.btn_video_x || 517, coords.btn_video_y || 123);
-  const coordBtnDesligar = calcCoords(deviceId, coords.btn_desligar_x || 586, coords.btn_desligar_y || 1416);
-  const coordResetMenu = calcCoords(deviceId, coords.reset_menu_x || 655, coords.reset_menu_y || 1299);
-  const coordResetX = calcCoords(deviceId, coords.reset_x_x || 332, coords.reset_x_y || 730);
+  // Coordenadas base (custom_coords tem prioridade, senão calcCoords)
+  const coordBtnAudio = coords.custom?.sendCall?.btn_audio 
+    ? coords.custom.sendCall.btn_audio 
+    : calcCoords(deviceId, coords.btn_audio_x || 601, coords.btn_audio_y || 126);
+  const coordBtnVideo = coords.custom?.sendCall?.btn_video 
+    ? coords.custom.sendCall.btn_video 
+    : calcCoords(deviceId, coords.btn_video_x || 517, coords.btn_video_y || 123);
+  const coordBtnDesligar = coords.custom?.sendCall?.btn_desligar 
+    ? coords.custom.sendCall.btn_desligar 
+    : calcCoords(deviceId, coords.btn_desligar_x || 586, coords.btn_desligar_y || 1416);
+  const coordResetMenu = coords.custom?.sendCall?.reset_menu 
+    ? coords.custom.sendCall.reset_menu 
+    : calcCoords(deviceId, coords.reset_menu_x || 655, coords.reset_menu_y || 1299);
+  const coordResetX = coords.custom?.sendCall?.reset_x 
+    ? coords.custom.sendCall.reset_x 
+    : calcCoords(deviceId, coords.reset_x_x || 332, coords.reset_x_y || 730);
   
   // 1. Abre WhatsApp na conversa
   console.log(`📱 [${deviceId}] Abrindo conversa...`);
@@ -457,12 +489,22 @@ async function sendPix(deviceId, number, coords = {}) {
     await getResolution(deviceId);
   }
   
-  // Coordenadas base (referência 720x1600)
-  const coordClipe = calcCoords(deviceId, coords.clipe_x || 492, coords.clipe_y || 1461);
-  const coordIconPix = calcCoords(deviceId, coords.icon_pix_x || 282, coords.icon_pix_y || 1115);
-  const coordBtnEnviar = calcCoords(deviceId, coords.btn_enviar_x || 364, coords.btn_enviar_y || 1452);
-  const coordResetMenu = calcCoords(deviceId, coords.reset_menu_x || 655, coords.reset_menu_y || 1299);
-  const coordResetX = calcCoords(deviceId, coords.reset_x_x || 332, coords.reset_x_y || 730);
+  // Coordenadas base (custom_coords tem prioridade, senão calcCoords)
+  const coordClipe = coords.custom?.sendPix?.clipe 
+    ? coords.custom.sendPix.clipe 
+    : calcCoords(deviceId, coords.clipe_x || 492, coords.clipe_y || 1461);
+  const coordIconPix = coords.custom?.sendPix?.icon_pix 
+    ? coords.custom.sendPix.icon_pix 
+    : calcCoords(deviceId, coords.icon_pix_x || 282, coords.icon_pix_y || 1115);
+  const coordBtnEnviar = coords.custom?.sendPix?.btn_enviar 
+    ? coords.custom.sendPix.btn_enviar 
+    : calcCoords(deviceId, coords.btn_enviar_x || 364, coords.btn_enviar_y || 1452);
+  const coordResetMenu = coords.custom?.sendPix?.reset_menu 
+    ? coords.custom.sendPix.reset_menu 
+    : calcCoords(deviceId, coords.reset_menu_x || 655, coords.reset_menu_y || 1299);
+  const coordResetX = coords.custom?.sendPix?.reset_x 
+    ? coords.custom.sendPix.reset_x 
+    : calcCoords(deviceId, coords.reset_x_x || 332, coords.reset_x_y || 730);
   
   // 1. Abre WhatsApp na conversa
   console.log(`📱 [${deviceId}] Abrindo conversa...`);
@@ -523,13 +565,25 @@ async function saveContact(deviceId, namelead, numberlead, tag = '', coords = {}
     await getResolution(deviceId);
   }
   
-  // Coordenadas base (referência 720x1600) - 11 passos
-  const coordPasso1 = calcCoords(deviceId, coords.passo1_x || 644, coords.passo1_y || 1325);
-  const coordPasso2 = calcCoords(deviceId, coords.passo2_x || 346, coords.passo2_y || 360);
-  const coordPasso3 = calcCoords(deviceId, coords.passo3_x || 218, coords.passo3_y || 257);
-  const coordPasso5 = calcCoords(deviceId, coords.passo5_x || 205, coords.passo5_y || 389);
-  const coordPasso7 = calcCoords(deviceId, coords.passo7_x || 368, coords.passo7_y || 526);
-  const coordPasso9 = calcCoords(deviceId, coords.passo9_x || 340, coords.passo9_y || 954);
+  // Coordenadas base (custom_coords tem prioridade, senão calcCoords)
+  const coordPasso1 = coords.custom?.saveContact?.passo1 
+    ? coords.custom.saveContact.passo1 
+    : calcCoords(deviceId, coords.passo1_x || 644, coords.passo1_y || 1325);
+  const coordPasso2 = coords.custom?.saveContact?.passo2 
+    ? coords.custom.saveContact.passo2 
+    : calcCoords(deviceId, coords.passo2_x || 346, coords.passo2_y || 360);
+  const coordPasso3 = coords.custom?.saveContact?.passo3 
+    ? coords.custom.saveContact.passo3 
+    : calcCoords(deviceId, coords.passo3_x || 218, coords.passo3_y || 257);
+  const coordPasso5 = coords.custom?.saveContact?.passo5 
+    ? coords.custom.saveContact.passo5 
+    : calcCoords(deviceId, coords.passo5_x || 205, coords.passo5_y || 389);
+  const coordPasso7 = coords.custom?.saveContact?.passo7 
+    ? coords.custom.saveContact.passo7 
+    : calcCoords(deviceId, coords.passo7_x || 368, coords.passo7_y || 526);
+  const coordPasso9 = coords.custom?.saveContact?.passo9 
+    ? coords.custom.saveContact.passo9 
+    : calcCoords(deviceId, coords.passo9_x || 340, coords.passo9_y || 954);
   
   // Garante que está na home do WhatsApp antes de começar
   console.log(`🏠 [${deviceId}] Garantindo que está na Home...`);

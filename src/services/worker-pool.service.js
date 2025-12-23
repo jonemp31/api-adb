@@ -188,7 +188,8 @@ async function startWorkerPool(devices, isInitialBoot = false) {
     novosWorkers++;
     const coords = {
       x: device.focus_x || 1345,
-      y: device.focus_y || 1006
+      y: device.focus_y || 1006,
+      custom: device.custom_coords || null
     };
     
     // Inicia novo worker
