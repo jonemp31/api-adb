@@ -35,7 +35,8 @@ const DEFAULT_CUSTOM_COORDS = {
     tap: { x: 1345, y: 1006 }
   },
   sendMedia: {
-    btn_once: { x: 563, y: 1463 },
+    confirm_video: { x: 549, y: 866 },
+    btn_once: { x: 652, y: 1347 },
     enviar: { x: 670, y: 1459 }
   },
   sendCall: {

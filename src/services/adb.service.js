@@ -292,18 +292,29 @@ async function sendMedia(deviceId, number, media, caption = '', viewonce = false
   await execShell(deviceId, intentCmd);
   await sleep(4000); // Aguarda carregar preview da mídia
   
-  // 2. Ativar Visualização Única se necessário
+  // 2. Se for vídeo, clicar em "Deseja compartilhar? Sim"
+  if (mediaType === 'video/*') {
+    console.log(`🎬 [${deviceId}] Confirmando compartilhamento de vídeo...`);
+    const coordConfirmVideo = coords.custom?.sendMedia?.confirm_video 
+      ? coords.custom.sendMedia.confirm_video 
+      : calcCoords(deviceId, 549, 866);
+    
+    await execShell(deviceId, `input tap ${coordConfirmVideo.x} ${coordConfirmVideo.y}`);
+    await sleep(2000);
+  }
+  
+  // 3. Ativar Visualização Única se necessário
   if (viewonce) {
     console.log(`👁️ [${deviceId}] Ativando Visualização Única...`);
     const coordBtnOnce = coords.custom?.sendMedia?.btn_once 
       ? coords.custom.sendMedia.btn_once 
-      : calcCoords(deviceId, 563, 1463);
+      : calcCoords(deviceId, 652, 1347);
     
     await execShell(deviceId, `input tap ${coordBtnOnce.x} ${coordBtnOnce.y}`);
     await sleep(1500);
   }
   
-  // 3. Enviar
+  // 4. Enviar
   console.log(`📤 [${deviceId}] Enviando mídia...`);
   const coordEnviar = coords.custom?.sendMedia?.enviar 
     ? coords.custom.sendMedia.enviar 
@@ -312,7 +323,7 @@ async function sendMedia(deviceId, number, media, caption = '', viewonce = false
   await execShell(deviceId, `input tap ${coordEnviar.x} ${coordEnviar.y}`);
   await sleep(3000);
   
-  // 4. Voltar (2 backs)
+  // 5. Voltar (2 backs)
   console.log(`🔙 [${deviceId}] Voltando...`);
   await execShell(deviceId, 'input keyevent 4');
   await sleep(500);
