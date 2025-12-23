@@ -257,12 +257,16 @@ async function connect(ip, port = '5555') {
  * @param {object} coords - Coordenadas customizadas
  */
 async function sendMedia(deviceId, number, media, caption = '', viewonce = false, coords = {}) {
-  console.log(`📷 [${deviceId}] Enviando mídia ${media} para ${number} (viewonce: ${viewonce})`);
+  console.log(`📷 [${deviceId}] Enviando mídia ${media} para ${number} (viewonce: ${viewonce}, tipo: ${typeof viewonce})`);
   
   // Busca resolução se não tem
   if (!resolutionCache[deviceId]) {
     await getResolution(deviceId);
   }
+  
+  // Normaliza viewonce para boolean
+  const isViewOnce = viewonce === true || viewonce === 'true' || viewonce === '1';
+  console.log(`👁️ [${deviceId}] ViewOnce normalizado: ${isViewOnce}`);
   
   // Determina tipo de mídia baseado na extensão
   const ext = media.split('.').pop().toLowerCase();
@@ -304,12 +308,13 @@ async function sendMedia(deviceId, number, media, caption = '', viewonce = false
   }
   
   // 3. Ativar Visualização Única se necessário
-  if (viewonce) {
+  if (isViewOnce) {
     console.log(`👁️ [${deviceId}] Ativando Visualização Única...`);
     const coordBtnOnce = coords.custom?.sendMedia?.btn_once 
       ? coords.custom.sendMedia.btn_once 
       : calcCoords(deviceId, 652, 1347);
     
+    console.log(`👁️ [${deviceId}] Clicando em ViewOnce: X=${coordBtnOnce.x}, Y=${coordBtnOnce.y}`);
     await execShell(deviceId, `input tap ${coordBtnOnce.x} ${coordBtnOnce.y}`);
     await sleep(1500);
   }
@@ -335,7 +340,7 @@ async function sendMedia(deviceId, number, media, caption = '', viewonce = false
     number,
     media,
     caption,
-    viewonce,
+    viewonce: isViewOnce,
     timestamp: new Date().toISOString()
   };
 }
