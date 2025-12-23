@@ -343,6 +343,101 @@ async function sendMedia(deviceId, number, media, caption = '', viewonce = false
 }
 
 /**
+ * Envia áudio via WhatsApp
+ * @param {string} deviceId - ID do device
+ * @param {string} number - Número do destinatário
+ * @param {string} audio - Nome do arquivo de áudio
+ * @param {object} coords - Coordenadas customizadas
+ */
+async function sendAudio(deviceId, number, audio, coords = {}) {
+  console.log(`🎧 [${deviceId}] Enviando áudio ${audio} para ${number}`);
+  
+  // Busca resolução se não tem
+  if (!resolutionCache[deviceId]) {
+    await getResolution(deviceId);
+  }
+  
+  // 1. Abre WhatsApp na conversa
+  console.log(`📱 [${deviceId}] Abrindo conversa...`);
+  await execShell(
+    deviceId,
+    `am start -a android.intent.action.VIEW -d "https://api.whatsapp.com/send?phone=${number}" com.whatsapp.w4b`
+  );
+  await sleep(3000);
+  
+  // 2. Abre menu de anexos
+  console.log(`📎 [${deviceId}] Abrindo menu de anexos...`);
+  const coordClipe = coords.custom?.sendAudio?.clipe 
+    ? coords.custom.sendAudio.clipe 
+    : calcCoords(deviceId, 462, 1486);
+  
+  await execShell(deviceId, `input tap ${coordClipe.x} ${coordClipe.y}`);
+  await sleep(1000);
+  
+  // 3. Seleciona opção Áudio
+  console.log(`🎧 [${deviceId}] Selecionando áudio...`);
+  const coordAudio = coords.custom?.sendAudio?.audio_btn 
+    ? coords.custom.sendAudio.audio_btn 
+    : calcCoords(deviceId, 629, 904);
+  
+  await execShell(deviceId, `input tap ${coordAudio.x} ${coordAudio.y}`);
+  await sleep(1000);
+  
+  // 4. Campo de busca
+  console.log(`🔍 [${deviceId}] Abrindo campo de busca...`);
+  const coordBusca = coords.custom?.sendAudio?.busca 
+    ? coords.custom.sendAudio.busca 
+    : calcCoords(deviceId, 675, 131);
+  
+  await execShell(deviceId, `input tap ${coordBusca.x} ${coordBusca.y}`);
+  await sleep(1000);
+  
+  // 5. Digita nome do áudio
+  console.log(`⌨️ [${deviceId}] Digitando nome do áudio...`);
+  await typeHumanAdvanced(deviceId, audio);
+  await sleep(3000);
+  
+  // 6. Seleciona áudio encontrado
+  console.log(`📂 [${deviceId}] Selecionando áudio encontrado...`);
+  const coordSeleciona = coords.custom?.sendAudio?.seleciona 
+    ? coords.custom.sendAudio.seleciona 
+    : calcCoords(deviceId, 221, 268);
+  
+  await execShell(deviceId, `input tap ${coordSeleciona.x} ${coordSeleciona.y}`);
+  await sleep(1000);
+  
+  // 7. Clica em enviar
+  console.log(`📤 [${deviceId}] Enviando áudio...`);
+  const coordEnviar = coords.custom?.sendAudio?.enviar 
+    ? coords.custom.sendAudio.enviar 
+    : calcCoords(deviceId, 625, 933);
+  
+  await execShell(deviceId, `input tap ${coordEnviar.x} ${coordEnviar.y}`);
+  await sleep(1000);
+  
+  // 8. Confirma envio
+  console.log(`✅ [${deviceId}] Confirmando envio...`);
+  const coordConfirma = coords.custom?.sendAudio?.confirma 
+    ? coords.custom.sendAudio.confirma 
+    : calcCoords(deviceId, 527, 843);
+  
+  await execShell(deviceId, `input tap ${coordConfirma.x} ${coordConfirma.y}`);
+  await sleep(2000);
+  
+  // 9. Volta (1 back)
+  console.log(`🔙 [${deviceId}] Voltando...`);
+  await execShell(deviceId, 'input keyevent 4');
+  await sleep(1000);
+  
+  return {
+    sent: true,
+    number,
+    audio,
+    timestamp: new Date().toISOString()
+  };
+}
+
+/**
  * Realiza ligação (voz ou vídeo) via WhatsApp
  * @param {string} deviceId - ID do device
  * @param {string} number - Número do destinatário
@@ -620,6 +715,7 @@ module.exports = {
   sendMessage,
   connect,
   sendMedia,
+  sendAudio,
   sendCall,
   sendPix,
   saveContact,

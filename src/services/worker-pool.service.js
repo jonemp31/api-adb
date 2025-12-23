@@ -129,6 +129,15 @@ async function executeTask(deviceId, task, coords) {
         coords
       );
     
+    // Enviar áudio
+    case 'send_audio':
+      return await adbService.sendAudio(
+        deviceId,
+        payload.number,
+        payload.audio,
+        coords
+      );
+    
     // Enviar ligação (voz ou vídeo)
     case 'send_call':
       return await adbService.sendCall(

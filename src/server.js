@@ -39,6 +39,14 @@ const DEFAULT_CUSTOM_COORDS = {
     btn_once: { x: 563, y: 1463 },
     enviar: { x: 670, y: 1459 }
   },
+  sendAudio: {
+    clipe: { x: 462, y: 1486 },
+    audio_btn: { x: 629, y: 904 },
+    busca: { x: 675, y: 131 },
+    seleciona: { x: 221, y: 268 },
+    enviar: { x: 625, y: 933 },
+    confirma: { x: 527, y: 843 }
+  },
   sendCall: {
     btn_audio: { x: 601, y: 126 },
     btn_video: { x: 517, y: 123 },
@@ -421,7 +429,15 @@ app.post('/message/sendMedia/:device', (req, res) => {
   });
 });
 
-// 3. Enviar Ligação
+// 3. Enviar Áudio
+app.post('/message/sendAudio/:device', (req, res) => {
+  const { number, audio } = req.body;
+  if (!number || !audio) return res.status(400).json({ error: 'number e audio obrigatórios' });
+  
+  handleTaskRequest(req, res, 'send_audio', { number, audio });
+});
+
+// 4. Enviar Ligação
 app.post('/message/sendCall/:device', (req, res) => {
   const { number, chamada, callDuration } = req.body;
   if (!number || !chamada) return res.status(400).json({ error: 'number e chamada obrigatórios' });
@@ -434,7 +450,7 @@ app.post('/message/sendCall/:device', (req, res) => {
   });
 });
 
-// 4. Enviar PIX
+// 5. Enviar PIX
 app.post('/message/sendPix/:device', (req, res) => {
   const { number } = req.body;
   if (!number) return res.status(400).json({ error: 'number obrigatório' });
@@ -442,7 +458,7 @@ app.post('/message/sendPix/:device', (req, res) => {
   handleTaskRequest(req, res, 'send_pix', { number });
 });
 
-// 5. Salvar Contato
+// 6. Salvar Contato
 app.post('/message/saveContact/:device', (req, res) => {
   const { namelead, numberlead, tag } = req.body;
   if (!namelead || !numberlead) return res.status(400).json({ error: 'namelead e numberlead obrigatórios' });
